@@ -1,0 +1,516 @@
+-- Altera Memory Initialization File (MIF)
+
+DEPTH = 1024;
+WIDTH = 16;
+
+ADDRESS_RADIX = HEX;
+DATA_RADIX = HEX;
+
+CONTENT
+  BEGIN
+    [000..3FF] : 0000;  -- Default to NOP
+
+           000 : 0598;  -- 	LOAD    Zero
+           001 : 4C83;  -- 	OUT     LVELCMD     ; Stop motors
+           002 : 4C8B;  -- 	OUT     RVELCMD
+           003 : 4CB2;  -- 	OUT     SONAREN     ; Disable sonar (optional)
+           004 : 4168;  -- 	CALL    SetupI2C    ; Configure the I2C
+           005 : 4151;  -- 	CALL    BattCheck   ; Get battery voltage (and end if too low).
+           006 : 4C05;  -- 	OUT     SSEG2       ; Display batt voltage on SS
+           007 : 0598;  -- 	LOAD    Zero
+           008 : 3417;  -- 	ADDI    &H17        ; arbitrary reminder to toggle SW17
+           009 : 4C04;  -- 	OUT     SSEG1
+           00A : 059D;  -- 	LOAD Five
+           00B : 4C06;  -- 	OUT LCD
+           00C : 4803;  -- 	IN      XIO         ; contains KEYs and SAFETY
+           00D : 25DF;  -- 	AND     StartMask   ; mask with 0x10100 : KEY3 and SAFETY
+           00E : 2DDB;  -- 	XOR     Mask4       ; KEY3 is active low; invert SAFETY to match
+           00F : 1C0C;  -- 	JPOS    WaitForUser ; one of those is not ready, so try again
+           010 : 4075;  -- 	CALL ResetInitConditions
+           011 : 4082;  -- 	CALL keepMovingReverse		
+           012 : 4087;  -- 	CALL keepMovingForward      
+           013 : 4178;  -- 	CALL shortJobDebug			 ; Pick (2,3) Drop (1,3)
+           014 : 4180;  --  	CALL medJobDebug			 ; Pick (3,3) Drop (1,4)
+           015 : 4188;  -- 	CALL longJobDebug			 ; Pick (5,1) Drop (1,5)
+           016 : 4800;  -- 	IN 	 	Switches
+           017 : 37FF;  -- 	ADDI 	-1
+           018 : 2032;  -- 	JZERO	Job1
+           019 : 4800;  -- 	IN 	 	Switches
+           01A : 37FE;  -- 	ADDI 	-2
+           01B : 203F;  -- 	JZERO	Job2
+           01C : 4800;  -- 	IN 	 	Switches
+           01D : 37FC;  -- 	ADDI 	-4
+           01E : 2046;  -- 	JZERO	Job3
+           01F : 4800;  -- 	IN 	 	Switches
+           020 : 37F8;  -- 	ADDI 	-8
+           021 : 204D;  -- 	JZERO	Job4
+           022 : 4800;  -- 	IN 	 	Switches
+           023 : 37F0;  -- 	ADDI 	-16
+           024 : 2054;  -- 	JZERO	Job5
+           025 : 4800;  -- 	IN 	 	Switches
+           026 : 37E0;  -- 	ADDI 	-32
+           027 : 205B;  -- 	JZERO	Job6
+           028 : 4800;  -- 	IN 	 	Switches
+           029 : 37C0;  -- 	ADDI 	-64
+           02A : 2062;  -- 	JZERO	Job7
+           02B : 4800;  -- 	IN 	 	Switches
+           02C : 3780;  -- 	ADDI 	-128
+           02D : 2069;  -- 	JZERO	Job8
+           02E : 0598;  -- 	LOAD Zero
+           02F : 37FF;  -- 	ADDI -1
+           030 : 4C06;  -- 	OUT LCD
+           031 : 140C;  -- 	JUMP waitforuser
+           032 : 05C5;  -- 	LOAD ForgetMe
+           033 : 4C98;  -- 	OUT  UART
+           034 : 4146;  -- 	CALL Buffer
+           035 : 05A9;  -- 	LOAD Reporting
+           036 : 4C98;  -- 	OUT  UART
+           037 : 4146;  -- 	Call Buffer
+           038 : 05B2;  -- 	LOAD Picked1
+           039 : 09C7;  -- 	STORE Picktemp
+           03A : 05BA;  -- 	LOAD Dropped1
+           03B : 09C8;  -- 	STORE Droptemp
+           03C : 05AA;  -- 	LOAD Reqjob1
+           03D : 4094;  -- 	CALL doJob
+           03E : 408C;  -- 	CALL waitforadjustment
+           03F : 05B3;  -- 	LOAD Picked2
+           040 : 09C7;  -- 	STORE Picktemp
+           041 : 05BB;  -- 	LOAD Dropped2
+           042 : 09C8;  -- 	STORE Droptemp
+           043 : 05AB;  -- 	LOAD Reqjob2
+           044 : 4094;  -- 	CALL doJob
+           045 : 408C;  -- 	CALL waitforadjustment
+           046 : 05B4;  -- 	LOAD Picked3
+           047 : 09C7;  -- 	STORE Picktemp
+           048 : 05BC;  -- 	LOAD Dropped3
+           049 : 09C8;  -- 	STORE Droptemp
+           04A : 05AC;  -- 	LOAD Reqjob3
+           04B : 4094;  -- 	CALL doJob
+           04C : 408C;  -- 	CALL waitforadjustment
+           04D : 05B5;  -- 	LOAD Picked4
+           04E : 09C7;  -- 	STORE Picktemp
+           04F : 05BD;  -- 	LOAD Dropped4
+           050 : 09C8;  -- 	STORE Droptemp
+           051 : 05AD;  -- 	LOAD Reqjob4
+           052 : 4094;  -- 	CALL doJob
+           053 : 408C;  -- 	CALL waitforadjustment
+           054 : 05B6;  -- 	LOAD Picked5
+           055 : 09C7;  -- 	STORE Picktemp
+           056 : 05BE;  -- 	LOAD Dropped5
+           057 : 09C8;  -- 	STORE Droptemp
+           058 : 05AE;  -- 	LOAD Reqjob5
+           059 : 4094;  -- 	CALL doJob
+           05A : 408C;  -- 	CALL waitforadjustment
+           05B : 05B7;  -- 	LOAD Picked6
+           05C : 09C7;  -- 	STORE Picktemp
+           05D : 05BF;  -- 	LOAD Dropped6
+           05E : 09C8;  -- 	STORE Droptemp
+           05F : 05AF;  -- 	LOAD Reqjob6
+           060 : 4094;  -- 	CALL doJob
+           061 : 408C;  -- 	CALL waitforadjustment
+           062 : 05B8;  -- 	LOAD Picked7
+           063 : 09C7;  -- 	STORE Picktemp
+           064 : 05C0;  -- 	LOAD Dropped7
+           065 : 09C8;  -- 	STORE Droptemp
+           066 : 05B0;  -- 	LOAD Reqjob7
+           067 : 4094;  -- 	CALL doJob
+           068 : 408C;  -- 	CALL waitforadjustment
+           069 : 05B9;  -- 	LOAD Picked8
+           06A : 09C7;  -- 	STORE Picktemp
+           06B : 05C1;  -- 	LOAD Dropped8
+           06C : 09C8;  -- 	STORE Droptemp
+           06D : 05B1;  -- 	LOAD Reqjob8
+           06E : 4094;  -- 	CALL doJob
+           06F : 4071;  -- 	CALL CLOCKOUT
+           070 : 140C;  -- 	JUMP 	WaitForUser
+           071 : 05C3;  -- 	LOAD SENDDONE
+           072 : 4C98;  -- 	OUT  UART
+           073 : 414B;  -- 	CALL WAIT1
+           074 : 4400;  -- 	RETURN	
+           075 : 4CC3;  -- OUT Resetodo
+           076 : 0599;  -- LOAD One
+           077 : 09CB;  -- STORE xCurr
+           078 : 09CC;  -- STORE ycurr
+           079 : 4400;  -- RETURN
+           07A : 414B;  -- Call wait1
+           07B : 059B;  -- LOAD Three
+           07C : 4C0A;  -- OUT BEEP
+           07D : 414B;  -- CALL wait1
+           07E : 0598;  -- LOAD Zero
+           07F : 4C0A;  -- OUT Beep
+           080 : 414B;  -- CALL wait1
+           081 : 4400;  -- REturn
+           082 : 05F1;  -- LOAD LRFast
+           083 : 4C83;  -- OUT LVELCMD
+           084 : 05F3;  -- LOAD RRFast
+           085 : 4C8B;  -- OUT RVELCMD
+           086 : 1482;  -- jump KeepMovingReverse
+           087 : 05F0;  -- LOAD LFFast
+           088 : 4C83;  -- OUT LVELCMD
+           089 : 05F2;  -- LOAD RFFast
+           08A : 4C8B;  -- OUT RVELCMD
+           08B : 1487;  -- jump KeepMovingForward
+           08C : 05A5;  -- 	LOAD FFAST
+           08D : 4C83;  -- 	OUT LVELCMD
+           08E : 4C8B;  -- 	OUT RVELCMD
+           08F : 4803;  -- 	IN      XIO         ; contains KEYs and SAFETY
+           090 : 25DF;  -- 	AND     StartMask   ; mask with 0x10100 : KEY3 and SAFETY
+           091 : 2DDB;  -- 	XOR     Mask4       ; KEY3 is active low; invert SAFETY to match
+           092 : 1C0C;  -- 	JPOS    WaitForUser ; one of those is not ready, so try again
+           093 : 4400;  -- RETURN
+           094 : 4C98;  -- 	OUT  UART
+           095 : 4146;  -- 	CALL Buffer
+           096 : 40A3;  -- 	CALL StoreJob
+           097 : 40B8;  -- 	CALL PickJob
+           098 : 05C7;  -- 	LOAD Picktemp
+           099 : 4C98;  -- 	OUT  UART
+           09A : 4C06;  -- 	OUT  LCD
+           09B : 407A;  -- 	CALL SignalBeep
+           09C : 40C4;  -- 	CALL DropJob
+           09D : 05C8;  -- 	LOAD Droptemp
+           09E : 4C06;  -- 	OUT  LCD
+           09F : 4C98;  -- 	OUT  UART
+           0A0 : 407A;  -- 	CALL SignalBeep
+           0A1 : 40CF;  -- 	CALL ReturnHome
+           0A2 : 4400;  -- RETURN
+           0A3 : 4898;  -- 	IN UART
+           0A4 : 25E0;  -- 	AND AllSonar
+           0A5 : 09D1;  -- 	STORE PickY ;inverted
+           0A6 : 4146;  -- 	CALL Buffer
+           0A7 : 4898;  -- 	IN UART
+           0A8 : 25E0;  -- 	AND AllSonar
+           0A9 : 09D0;  -- 	STORE PickX
+           0AA : 4146;  -- 	CALL Buffer
+           0AB : 4898;  -- 	IN UART 
+           0AC : 25E0;  -- 	AND AllSonar
+           0AD : 09D3;  -- 	STORE DropY
+           0AE : 4146;  -- 	CALL Buffer
+           0AF : 4898;  -- 	IN UART 
+           0B0 : 25E0;  -- 	AND AllSonar
+           0B1 : 09D2;  -- 	STORE DropX
+           0B2 : 4146;  -- 	CALL Buffer
+           0B3 : 4898;  -- 	IN UART
+           0B4 : 25E0;  -- 	AND AllSonar
+           0B5 : 09D4;  -- 	STORE Checksum
+           0B6 : 4146;  -- 	CALL Buffer
+           0B7 : 4400;  -- 	RETURN
+           0B8 : 05D0;  -- 	LOAD 	PickX
+           0B9 : 09D5;  -- 	STORE 	XTarget
+           0BA : 05D1;  -- 	LOAD	PickY
+           0BB : 09D6;  -- 	STORE	YTarget
+           0BC : 4107;  -- 	CALL 	CalcDifferences
+           0BD : 40D9;  -- 	CALL	MoveX
+           0BE : 4146;  -- 	CALL 	Buffer
+           0BF : 411E;  -- 	CALL	TurnCW90
+           0C0 : 4146;  -- 	CALL	Buffer
+           0C1 : 40F0;  -- 	CALL	MoveY
+           0C2 : 4146;  -- 	CALL 	Buffer
+           0C3 : 4400;  -- 	RETURN
+           0C4 : 05D2;  --     LOAD 	DropX
+           0C5 : 09D5;  -- 	STORE 	XTarget
+           0C6 : 05D3;  -- 	LOAD	DropY
+           0C7 : 09D6;  -- 	STORE	YTarget
+           0C8 : 4107;  -- 	CALL	CalcDifferences
+           0C9 : 40F0;  -- 	CALL 	MoveY
+           0CA : 4146;  -- 	CALL 	Buffer
+           0CB : 410E;  -- 	CALL	TurnCCW90
+           0CC : 4146;  -- 	CALL 	Buffer
+           0CD : 40D9;  -- 	CALL 	MoveX
+           0CE : 4400;  -- 	RETURN
+           0CF : 0599;  -- 	LOAD 	One
+           0D0 : 09D6;  -- 	STORE 	Ytarget
+           0D1 : 09D5;  -- 	STORE	XTarget
+           0D2 : 4107;  -- 	CALL 	CalcDifferences
+           0D3 : 40D9;  -- 	CALL 	MoveX
+           0D4 : 4400;  -- 	RETURN
+           0D5 : 4803;  -- 	IN      XIO         ; contains KEYs and SAFETY
+           0D6 : 25DF;  -- 	AND     StartMask   ; mask with 0x10100 : KEY3 and SAFETY
+           0D7 : 1CD5;  -- 	JPOS    WaitForPress ; one of those is not ready, so try again
+           0D8 : 4400;  -- 	RETURN
+           0D9 : 05C9;  -- 	LOAD 	xDiff
+           0DA : 1CDD;  -- 	JPOS	goRight
+           0DB : 18E6;  -- 	JNEG	goLeft
+           0DC : 20EF;  -- 	JZERO	exitMoveX
+           0DD : 413A;  -- 	CALL MoveBackward
+           0DE : 05CB;  -- 	LOAD xCurr
+           0DF : 3401;  -- 	ADDI 1
+           0E0 : 09CB;  -- 	STORE xCurr
+           0E1 : 05C9;  -- 	LOAD xDiff
+           0E2 : 37FF;  -- 	ADDI -1
+           0E3 : 09C9;  -- 	STORE xDiff
+           0E4 : 20EF;  -- 	JZERO exitMoveX
+           0E5 : 14DD;  -- 	JUMP goRight
+           0E6 : 412E;  -- 	CALL MoveForward
+           0E7 : 05CB;  -- 	LOAD xCurr
+           0E8 : 37FF;  -- 	ADDI -1
+           0E9 : 09CB;  -- 	STORE xCurr
+           0EA : 05C9;  -- 	LOAD xDiff
+           0EB : 3401;  -- 	ADDI 1
+           0EC : 09C9;  -- 	STORE xDiff
+           0ED : 20EF;  -- 	JZERO exitMoveX
+           0EE : 14E6;  -- 	JUMP goLeft
+           0EF : 4400;  -- 	RETURN
+           0F0 : 05CA;  -- 	LOAD	yDiff
+           0F1 : 1CFD;  -- 	JPOS	goDown
+           0F2 : 18F4;  -- 	JNEG	goUp
+           0F3 : 2106;  -- 	JZERO   exitMoveY
+           0F4 : 412E;  -- 	CALL MoveForward
+           0F5 : 05CC;  -- 	LOAD yCurr
+           0F6 : 37FF;  -- 	ADDI -1
+           0F7 : 09CC;  -- 	STORE yCurr
+           0F8 : 05CA;  -- 	LOAD yDiff
+           0F9 : 3401;  -- 	ADDI 1
+           0FA : 09CA;  -- 	STORE yDiff
+           0FB : 2106;  -- 	JZERO exitMoveY
+           0FC : 14F4;  -- 	JUMP goUp
+           0FD : 413A;  -- 	CALL MoveBackward
+           0FE : 05CC;  -- 	LOAD yCurr
+           0FF : 3401;  -- 	ADDI 1
+           100 : 09CC;  -- 	STORE yCurr
+           101 : 05CA;  -- 	LOAD yDiff
+           102 : 37FF;  -- 	ADDI -1
+           103 : 09CA;  -- 	STORE yDiff
+           104 : 2106;  -- 	JZERO exitMoveY
+           105 : 14FD;  -- 	JUMP goDown
+           106 : 4400;  -- 	RETURN
+           107 : 05D5;  -- 	LOAD 	XTarget
+           108 : 11CB;  -- 	SUB		xCurr
+           109 : 09C9;  -- 	STORE   xDiff
+           10A : 05D6;  -- 	LOAD 	YTarget
+           10B : 11CC;  -- 	SUB		yCurr
+           10C : 09CA;  -- 	STORE	yDiff
+           10D : 4400;  -- 	RETURN
+           10E : 4CC3;  -- 	OUT		RESETODO
+           10F : 05A6;  -- 	LOAD	RFast
+           110 : 4C83;  -- 	OUT		LVELCMD
+           111 : 05A5;  -- 	LOAD	FFast
+           112 : 4C8B;  -- 	OUT		RVELCMD
+           113 : 4888;  -- 	IN RPOS
+           114 : 3433;  -- 	ADDI 51			;SHIFT SO THAT THE STARTING POSITION IS 50, OFFSET BY THIS MUCH
+           115 : 11F5;  -- 	SUB CCWcond		;TURN CONDITION
+           116 : 190F;  -- 	JNEG CCW
+           117 : 05A3;  -- LOAD Fslow
+           118 : 4C83;  -- OUT LVELCMD
+           119 : 4C8B;  -- OUT RVELCMD
+           11A : 0598;  -- LOAD Zero
+           11B : 4C83;  -- OUT LVELCMD
+           11C : 4C8B;  -- OUT RVELCMD
+           11D : 4400;  -- RETURN
+           11E : 4CC3;  -- 	OUT RESETODO
+           11F : 05A6;  -- 	LOAD	RFast
+           120 : 4C8B;  -- 	OUT		RVELCMD
+           121 : 05A5;  -- 	LOAD	FFast
+           122 : 4C83;  -- 	OUT		LVELCMD
+           123 : 4880;  -- 	IN LPOS
+           124 : 3433;  -- 	ADDI 51			;SHIFT SO THAT THE STARTING POSITION IS 50, OFFSET BY THIS MUCH
+           125 : 11F6;  -- 	SUB CWcond		;TURN CONDITION
+           126 : 191F;  -- 	JNEG CW
+           127 : 05A3;  -- 	LOAD Fslow
+           128 : 4C83;  -- 	OUT LVELCMD
+           129 : 4C8B;  -- 	OUT RVELCMD
+           12A : 0598;  -- 	LOAD Zero
+           12B : 4C83;  -- 	OUT LVELCMD
+           12C : 4C8B;  -- 	OUT RVELCMD
+           12D : 4400;  -- RETURN
+           12E : 4CC3;  -- 	OUT     RESETODO    ; reset odometry in case wheels moved after programming
+           12F : 05F2;  -- 	LOAD    RFFast       ; Very slow forward movement
+           130 : 4C8B;  -- 	OUT     RVELCMD     ; commmand motors
+           131 : 05F0;  -- 	LOAD 	LFfast
+           132 : 4C83;  -- 	OUT     LVELCMD
+           133 : 48C0;  -- 	IN      XPOS        ; get current X position
+           134 : 11F4;  -- 	SUB     TwoFeet     ; check the distance
+           135 : 192F;  -- 	JNEG    Go2ft       ; not there yet; keep checking
+           136 : 0598;  -- 	LOAD    Zero
+           137 : 4C83;  -- 	OUT     LVELCMD     ; stop
+           138 : 4C8B;  -- 	OUT     RVELCMD
+           139 : 4400;  -- 	RETURN
+           13A : 4CC3;  -- 	OUT	RESETODO
+           13B : 05F1;  -- 	LOAD    LRFast       ; Very slow forward movement
+           13C : 4C83;  -- 	OUT     LVELCMD     ; commmand motors
+           13D : 05F3;  -- 	LOAD	RRFast
+           13E : 4C8B;  -- 	OUT     RVELCMD
+           13F : 48C0;  -- 	IN      XPOS        ; get current X position
+           140 : 0DF4;  -- 	ADD     TwoFeet     ; check the distance
+           141 : 1D3B;  -- 	JPOS    Go2ftBack   ; not there yet; keep checking
+           142 : 0598;  -- 	LOAD    Zero
+           143 : 4C83;  -- 	OUT     LVELCMD     ; stop
+           144 : 4C8B;  -- 	OUT     RVELCMD
+           145 : 4400;  -- 	RETURN
+           146 : 4C02;  -- 	OUT     TIMER
+           147 : 4802;  -- 	IN      TIMER
+           148 : 37FD;  -- 	ADDI    -3
+           149 : 194C;  -- 	JNEG    Wloop
+           14A : 4400;  -- 	RETURN
+           14B : 4C02;  -- 	OUT     TIMER
+           14C : 4802;  -- 	IN      TIMER
+           14D : 4C01;  -- 	OUT     LEDS
+           14E : 37F6;  -- 	ADDI    -10
+           14F : 194C;  -- 	JNEG    Wloop
+           150 : 4400;  -- 	RETURN
+           151 : 416F;  -- 	CALL    GetBattLvl 
+           152 : 11E1;  -- 	SUB     MinBatt
+           153 : 1956;  -- 	JNEG    DeadBatt
+           154 : 0DE1;  -- 	ADD     MinBatt     ; get original value back
+           155 : 4400;  -- 	RETURN
+           156 : 059C;  -- 	LOAD    Four
+           157 : 4C0A;  -- 	OUT     BEEP        ; start beep sound
+           158 : 416F;  -- 	CALL    GetBattLvl  ; get the battery level
+           159 : 4C04;  -- 	OUT     SSEG1       ; display it everywhere
+           15A : 4C05;  -- 	OUT     SSEG2
+           15B : 4C06;  -- 	OUT     LCD
+           15C : 0598;  -- 	LOAD    Zero
+           15D : 37FF;  -- 	ADDI    -1          ; 0xFFFF
+           15E : 4C01;  -- 	OUT     LEDS        ; all LEDs on
+           15F : 4C07;  -- 	OUT     GLEDS
+           160 : 414B;  -- 	CALL    Wait1       ; 1 second
+           161 : 0598;  -- 	Load    Zero
+           162 : 4C0A;  -- 	OUT     BEEP        ; stop beeping
+           163 : 0598;  -- 	LOAD    Zero
+           164 : 4C01;  -- 	OUT     LEDS        ; LEDs off
+           165 : 4C07;  -- 	OUT     GLEDS
+           166 : 414B;  -- 	CALL    Wait1       ; 1 second
+           167 : 1556;  -- 	JUMP    DeadBatt    ; repeat forever
+           168 : 05E2;  -- 	LOAD    I2CWCmd     ; 0x1190 (write 1B, read 1B, addr 0x90)
+           169 : 4C90;  -- 	OUT     I2C_CMD     ; to I2C_CMD register
+           16A : 0598;  -- 	LOAD    Zero        ; 0x0000 (A/D port 0, no increment)
+           16B : 4C91;  -- 	OUT     I2C_DATA    ; to I2C_DATA register
+           16C : 4C92;  -- 	OUT     I2C_RDY     ; start the communication
+           16D : 4175;  -- 	CALL    BlockI2C    ; wait for it to finish
+           16E : 4400;  -- 	RETURN
+           16F : 05E3;  -- 	LOAD    I2CRCmd     ; 0x0190 (write 0B, read 1B, addr 0x90)
+           170 : 4C90;  -- 	OUT     I2C_CMD     ; to I2C_CMD
+           171 : 4C92;  -- 	OUT     I2C_RDY     ; start the communication
+           172 : 4175;  -- 	CALL    BlockI2C    ; wait for it to finish
+           173 : 4891;  -- 	IN      I2C_DATA    ; get the returned data
+           174 : 4400;  -- 	RETURN
+           175 : 4892;  -- 	IN      I2C_RDY;   ; Read busy signal
+           176 : 1D75;  -- 	JPOS    BlockI2C    ; If not 0, try again
+           177 : 4400;  -- 	RETURN              ; Else return
+           178 : 05E4;  -- 	LOAD pickXshort
+           179 : 09D0;  -- 	STORE pickX
+           17A : 05E5;  -- 	LOAD pickYshort
+           17B : 09D1;  -- 	STORE pickY
+           17C : 05E6;  -- 	LOAD dropXShort
+           17D : 09D2;  -- 	STORE dropX
+           17E : 05E7;  -- 	LOAD dropYShort
+           17F : 09D3;  -- 	STORE dropY
+           180 : 05E8;  -- 	LOAD pickXMed
+           181 : 09D0;  -- 	STORE pickX
+           182 : 05E9;  -- 	LOAD pickYMed
+           183 : 09D1;  -- 	STORE pickY
+           184 : 05EA;  -- 	LOAD dropXMed
+           185 : 09D2;  -- 	STORE dropX
+           186 : 05EB;  -- 	LOAD dropYMed
+           187 : 09D3;  -- 	STORE dropY
+           188 : 05EC;  -- 	LOAD pickXLong
+           189 : 09D0;  -- 	STORE pickX
+           18A : 05ED;  -- 	LOAD pickYLong
+           18B : 09D1;  -- 	STORE pickY
+           18C : 05EE;  -- 	LOAD dropXLong
+           18D : 09D2;  -- 	STORE dropX
+           18E : 05EF;  -- 	LOAD dropYLong
+           18F : 09D3;  -- 	STORE dropY
+           190 : 40B8;  -- 	CALL PickJob
+           191 : 407A;  -- 	CALL SignalBeep
+           192 : 40C4;  -- 	CALL DropJob
+           193 : 407A;  -- 	CALL SignalBeep
+           194 : 40CF;  -- 	CALL ReturnHome
+           195 : 140C;  -- 	JUMP waitForUser
+           196 : 4400;  -- RETURN
+           197 : 0000;  -- Temp:     DW 0 ; "Temp" is not a great name, but can be helpful
+           198 : 0000;  -- Zero:     DW 0
+           199 : 0001;  -- One:      DW 1
+           19A : 0002;  -- Two:      DW 2
+           19B : 0003;  -- Three:    DW 3
+           19C : 0004;  -- Four:     DW 4
+           19D : 0005;  -- Five:     DW 5
+           19E : 0006;  -- Six:      DW 6
+           19F : 0007;  -- Seven:    DW 7
+           1A0 : 0008;  -- Eight:    DW 8
+           1A1 : 0009;  -- Nine:     DW 9
+           1A2 : 000A;  -- Ten:      DW 10
+           1A3 : 0064;  -- FSlow:    DW 100       ; 100 is about the lowest value that will move at all
+           1A4 : FF9C;  -- RSlow:    DW -100
+           1A5 : 01F4;  -- FFast:    DW 500       ; 500 is a fair clip (511 is max)
+           1A6 : FE0C;  -- RFast:    DW -500
+           1A7 : 0001;  -- Hello:          DW &H01
+           1A8 : 0080;  -- TReporting:     DW &H80
+           1A9 : 0010;  -- Reporting:      DW &H10
+           1AA : 0021;  -- Reqjob1:        DW &H21
+           1AB : 0022;  -- Reqjob2:        DW &H22
+           1AC : 0023;  -- Reqjob3:        DW &H23
+           1AD : 0024;  -- Reqjob4:        DW &H24
+           1AE : 0025;  -- Reqjob5:        DW &H25
+           1AF : 0026;  -- Reqjob6:        DW &H26
+           1B0 : 0027;  -- Reqjob7:        DW &H27
+           1B1 : 0028;  -- Reqjob8:        DW &H28
+           1B2 : 0031;  -- Picked1:        DW &H31
+           1B3 : 0032;  -- Picked2:        DW &H32
+           1B4 : 0033;  -- Picked3:        DW &H33
+           1B5 : 0034;  -- Picked4:        DW &H34
+           1B6 : 0035;  -- Picked5:        DW &H35
+           1B7 : 0036;  -- Picked6:        DW &H36
+           1B8 : 0037;  -- Picked7:        DW &H37
+           1B9 : 0038;  -- Picked8:        DW &H38
+           1BA : 0041;  -- Dropped1:       DW &H41
+           1BB : 0042;  -- Dropped2:       DW &H42
+           1BC : 0043;  -- Dropped3:       DW &H43
+           1BD : 0044;  -- Dropped4:       DW &H44
+           1BE : 0045;  -- Dropped5:       DW &H45
+           1BF : 0046;  -- Dropped6:       DW &H46
+           1C0 : 0047;  -- Dropped7:       DW &H47
+           1C1 : 0048;  -- Dropped8:       DW &H48
+           1C2 : 0050;  -- Timeleft:       DW &H50
+           1C3 : 0060;  -- SendDone:       DW &H60
+           1C4 : 0080;  -- Testjobs:       DW &H80
+           1C5 : 0090;  -- ForgetMe:       DW &H90
+           1C6 : 0000;  -- ImAlive:        DW &H00
+           1C7 : 0000;  -- Picktemp:       DW &H00
+           1C8 : 0000;  -- Droptemp:       DW &H00
+           1C9 : 0000;  -- Xdiff:	  DW 0
+           1CA : 0000;  -- Ydiff:	  DW 0
+           1CB : 0001;  -- xCurr:		DW 1
+           1CC : 0001;  -- yCurr:		DW 1
+           1CD : 0000;  -- THET:		DW 0
+           1CE : 0000;  -- LPOSEXIT:	DW 0
+           1CF : 0000;  -- RPOSEXIT:	DW 0
+           1D0 : 0005;  -- PickX:	DW	5
+           1D1 : 0005;  -- PickY:	DW  5
+           1D2 : 0005;  -- DropX:	DW	5
+           1D3 : 0005;  -- DropY:	DW	5
+           1D4 : 0000;  -- Checksum:   DW 0
+           1D5 : 0000;  -- XTarget:	DW 0
+           1D6 : 0000;  -- YTarget:	DW 0
+           1D7 : 0001;  -- Mask0:    DW &B00000001
+           1D8 : 0002;  -- Mask1:    DW &B00000010
+           1D9 : 0004;  -- Mask2:    DW &B00000100
+           1DA : 0008;  -- Mask3:    DW &B00001000
+           1DB : 0010;  -- Mask4:    DW &B00010000
+           1DC : 0020;  -- Mask5:    DW &B00100000
+           1DD : 0040;  -- Mask6:    DW &B01000000
+           1DE : 0080;  -- Mask7:    DW &B10000000
+           1DF : 0014;  -- StartMask: DW &B10100
+           1E0 : 00FF;  -- AllSonar: DW &B11111111
+           1E1 : 006E;  -- MinBatt:  DW 110        ; 11V - minimum safe battery voltage
+           1E2 : 1190;  -- I2CWCmd:  DW &H1190     ; write one byte, read one byte, addr 0x90
+           1E3 : 0190;  -- I2CRCmd:  DW &H0190     ; write nothing, read one byte, addr 0x90
+           1E4 : 0002;  -- PickXShort: DW 2
+           1E5 : 0003;  -- PickYShort: DW 3
+           1E6 : 0001;  -- DropXShort: DW 1
+           1E7 : 0003;  -- DropYShort: DW 3
+           1E8 : 0003;  -- PickXMed:	DW 3
+           1E9 : 0003;  -- PickYMed:	DW 3
+           1EA : 0001;  -- DropXMed:	DW 1
+           1EB : 0004;  -- DropYMed:	DW 4
+           1EC : 0005;  -- PickXLong:	DW 5
+           1ED : 0001;  -- PickYLong:	DW 1
+           1EE : 0001;  -- DropXLong:	DW 1
+           1EF : 0005;  -- DropYLong:  DW 5
+           1F0 : 01E3;  -- LFfast:		DW 483
+           1F1 : FE17;  -- LRfast:		DW -489
+           1F2 : 01F4;  -- RFfast:		DW 500
+           1F3 : FE0C;  -- RRfast:		DW -500
+           1F4 : 00FF;  -- TwoFeet:  	DW 255       ; ~2ft in 2.1mm units
+           1F5 : 007B;  -- CCWcond: 	DW 123		; Increasing makes it turn more
+           1F6 : 0094;  -- CWcond:		DW 148	; Increasing makes it turn more -- previously 140
+  END;

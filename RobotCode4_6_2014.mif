@@ -1,0 +1,374 @@
+-- Altera Memory Initialization File (MIF)
+
+DEPTH = 1024;
+WIDTH = 16;
+
+ADDRESS_RADIX = HEX;
+DATA_RADIX = HEX;
+
+CONTENT
+  BEGIN
+    [000..3FF] : 0000;  -- Default to NOP
+
+           000 : 0530;  -- 	LOAD    Zero
+           001 : 4C83;  -- 	OUT     LVELCMD     ; Stop motors
+           002 : 4C8B;  -- 	OUT     RVELCMD
+           003 : 4CB2;  -- 	OUT     SONAREN     ; Disable sonar (optional)
+           004 : 411F;  -- 	CALL    SetupI2C    ; Configure the I2C
+           005 : 4108;  -- 	CALL    BattCheck   ; Get battery voltage (and end if too low).
+           006 : 4C05;  -- 	OUT     SSEG2       ; Display batt voltage on SS
+           007 : 0530;  -- 	LOAD    Zero
+           008 : 3417;  -- 	ADDI    &H17        ; arbitrary reminder to toggle SW17
+           009 : 4C04;  -- 	OUT     SSEG1
+           00A : 0536;  -- 	LOAD 	Six
+           00B : 4C06;  -- 	OUT 	LCD
+           00C : 4803;  -- 	IN      XIO         ; contains KEYs and SAFETY
+           00D : 255E;  -- 	AND     StartMask   ; mask with 0x10100 : KEY3 and SAFETY
+           00E : 2D5A;  -- 	XOR     Mask4       ; KEY3 is active low; invert SAFETY to match
+           00F : 1C0C;  -- 	JPOS    WaitForUser ; one of those is not ready, so try again
+           010 : 053D;  -- 	LOAD	FFast
+           011 : 094A;  -- 	STORE	Rforward
+           012 : 094B;  -- 	STORE 	Lforward
+           013 : 053E;  -- 	LOAD	RFAST
+           014 : 094C;  -- 	STORE	Rreverse
+           015 : 094D;  -- 	STORE	Lreverse
+           016 : 409E;  -- 	CALL MoveForward2Unit
+           017 : 140C;  -- 	JUMP 	WaitForUser
+           018 : 4102;  -- 	CALL Wait1
+           019 : 0531;  -- 	LOAD One
+           01A : 4C0A;  -- 	OUT BEEP
+           01B : 4102;  -- 	CALL Wait1
+           01C : 0530;  -- 	LOAD Zero
+           01D : 4C0A;  -- 	OUT BEEP
+           01E : 4102;  -- 	CALL Wait1
+           01F : 0550;  -- 	LOAD 	PickX
+           020 : 0954;  -- 	STORE 	XTarget
+           021 : 0551;  -- 	LOAD	PickY
+           022 : 0955;  -- 	STORE	YTarget
+           023 : 4064;  -- 	CALL 	CalcDifferences
+           024 : 4036;  -- 	CALL	MoveX
+           025 : 40FD;  -- 	CALL 	Buffer
+           026 : 4078;  -- 	CALL	TurnCW90
+           027 : 40FD;  -- 	CALL	Buffer
+           028 : 404D;  -- 	CALL	MoveY
+           029 : 40FD;  -- 	CALL 	Buffer
+           02A : 4018;  -- 	CALL	Signal
+           02B : 0552;  -- 	LOAD 	DropX
+           02C : 0954;  -- 	STORE 	XTarget
+           02D : 0553;  -- 	LOAD	DropY
+           02E : 0955;  -- 	STORE	YTarget
+           02F : 4064;  -- 	CALL	CalcDifferences
+           030 : 404D;  -- 	CALL 	MoveY
+           031 : 40FD;  -- 	CALL 	Buffer
+           032 : 406B;  -- 	CALL	TurnCCW90
+           033 : 40FD;  -- 	CALL 	Buffer
+           034 : 4036;  -- 	CALL 	MoveX
+           035 : 4400;  -- 	RETURN
+           036 : 0543;  -- 	LOAD 	xDiff
+           037 : 1C3A;  -- 	JPOS	goRight
+           038 : 1843;  -- 	JNEG	goLeft
+           039 : 204C;  -- 	JZERO	exitMoveX
+           03A : 40EB;  -- 	CALL MoveBackward
+           03B : 0545;  -- 	LOAD xCurr
+           03C : 3401;  -- 	ADDI 1
+           03D : 0945;  -- 	STORE xCurr
+           03E : 0543;  -- 	LOAD xDiff
+           03F : 37FF;  -- 	ADDI -1
+           040 : 0943;  -- 	STORE xDiff
+           041 : 204C;  -- 	JZERO exitMoveX
+           042 : 143A;  -- 	JUMP goRight
+           043 : 40B6;  -- 	CALL MoveForward
+           044 : 0545;  -- 	LOAD xCurr
+           045 : 37FF;  -- 	ADDI -1
+           046 : 0945;  -- 	STORE xCurr
+           047 : 0543;  -- 	LOAD xDiff
+           048 : 3401;  -- 	ADDI 1
+           049 : 0943;  -- 	STORE xDiff
+           04A : 204C;  -- 	JZERO exitMoveX
+           04B : 1443;  -- 	JUMP goLeft
+           04C : 4400;  -- 	RETURN
+           04D : 0544;  -- 	LOAD	yDiff
+           04E : 1C5A;  -- 	JPOS	goDown
+           04F : 1851;  -- 	JNEG	goUp
+           050 : 2063;  -- 	JZERO   exitMoveY
+           051 : 40B6;  -- 	CALL MoveForward
+           052 : 0546;  -- 	LOAD yCurr
+           053 : 37FF;  -- 	ADDI -1
+           054 : 0946;  -- 	STORE yCurr
+           055 : 0544;  -- 	LOAD yDiff
+           056 : 3401;  -- 	ADDI 1
+           057 : 0944;  -- 	STORE yDiff
+           058 : 2063;  -- 	JZERO exitMoveY
+           059 : 1451;  -- 	JUMP goUp
+           05A : 40EB;  -- 	CALL MoveBackward
+           05B : 0546;  -- 	LOAD yCurr
+           05C : 3401;  -- 	ADDI 1
+           05D : 0946;  -- 	STORE yCurr
+           05E : 0544;  -- 	LOAD yDiff
+           05F : 37FF;  -- 	ADDI -1
+           060 : 0944;  -- 	STORE yDiff
+           061 : 2063;  -- 	JZERO exitMoveY
+           062 : 145A;  -- 	JUMP goDown
+           063 : 4400;  -- 	RETURN
+           064 : 0554;  -- 	LOAD 	XTarget
+           065 : 1145;  -- 	SUB		xCurr
+           066 : 0943;  -- 	STORE   xDiff
+           067 : 0555;  -- 	LOAD 	YTarget
+           068 : 1146;  -- 	SUB		yCurr
+           069 : 0944;  -- 	STORE	yDiff
+           06A : 4400;  -- 	RETURN
+           06B : 4CC3;  -- 	OUT		RESETODO
+           06C : 053E;  -- 	LOAD	RFast
+           06D : 4C83;  -- 	OUT		LVELCMD
+           06E : 053D;  -- 	LOAD	FFast
+           06F : 4C8B;  -- 	OUT		RVELCMD
+           070 : 4888;  -- 	IN RPOS
+           071 : 3433;  -- 	ADDI 51			;SHIFT SO THAT THE STARTING POSITION IS 50, OFFSET BY THIS MUCH
+           072 : 377E;  -- 	ADDI -130		;TURN CONDITION
+           073 : 186C;  -- 	JNEG CCW
+           074 : 0530;  -- LOAD Zero
+           075 : 4C83;  -- OUT LVELCMD
+           076 : 4C8B;  -- OUT RVELCMD
+           077 : 4400;  -- RETURN
+           078 : 4CC3;  -- 	OUT RESETODO
+           079 : 053E;  -- 	LOAD	RFast
+           07A : 4C8B;  -- 	OUT		RVELCMD
+           07B : 053D;  -- 	LOAD	FFast
+           07C : 4C83;  -- 	OUT		LVELCMD
+           07D : 4880;  -- 	IN LPOS
+           07E : 3433;  -- 	ADDI 51			;SHIFT SO THAT THE STARTING POSITION IS 50, OFFSET BY THIS MUCH
+           07F : 3760;  -- 	ADDI -160		;TURN CONDITION
+           080 : 1879;  -- 	JNEG CW
+           081 : 0530;  -- 	LOAD Zero
+           082 : 4C83;  -- 	OUT LVELCMD
+           083 : 4C8B;  -- 	OUT RVELCMD
+           084 : 4400;  -- RETURN
+           085 : 4CC3;  -- 		OUT		RESETODO
+           086 : 053C;  -- Spin180: LOAD    RSlow
+           087 : 4C83;  --     	OUT     LVELCMD
+           088 : 053B;  --     	LOAD    FSlow
+           089 : 4C8B;  --     	OUT     RVELCMD
+           08A : 48C2;  --     	IN      THETA
+           08B : 4C04;  --     	OUT     SSEG1
+           08C : 0D40;  --    		ADD    CCW180
+           08D : 1886;  --     	JNEG    Spin180
+           08E : 0530;  --     	LOAD    Zero
+           08F : 4C83;  --     	OUT     LVELCMD
+           090 : 4C8B;  --     	OUT     RVELCMD    
+           091 : 4400;  --     	RETURN
+           092 : 4CC3;  -- 	OUT     RESETODO    ; reset odometry in case wheels moved after programming
+           093 : 053D;  -- 	LOAD    FFast       ; Very slow forward movement
+           094 : 4C83;  -- 	OUT     LVELCMD     ; commmand motors
+           095 : 4C8B;  -- 	OUT     RVELCMD
+           096 : 4888;  -- 	IN      RPOS        ; get current X position
+           097 : 1163;  -- 	SUB     TwoFeetPos     ; check the distance
+           098 : 4C06;  -- 	OUT 	LCD
+           099 : 1893;  -- 	JNEG    Go2ftPos       ; not there yet; keep checking
+           09A : 0530;  -- 	LOAD    Zero
+           09B : 4C83;  -- 	OUT     LVELCMD     ; stop
+           09C : 4C8B;  -- 	OUT     RVELCMD
+           09D : 4400;  -- 	RETURN
+           09E : 4CC3;  -- 	OUT     RESETODO    ; reset odometry in case wheels moved after programming
+           09F : 053D;  -- 	LOAD    FFast       ; Very slow forward movement
+           0A0 : 4C83;  -- 	OUT     LVELCMD     ; commmand motors
+           0A1 : 4C8B;  -- 	OUT     RVELCMD
+           0A2 : 4888;  -- 	IN      RPOS        ; get current X position
+           0A3 : 1164;  -- 	SUB     FourFeetPos     ; check the distance
+           0A4 : 4C06;  -- 	OUT 	LCD
+           0A5 : 189F;  -- 	JNEG    Go4ftPos       ; not there yet; keep checking
+           0A6 : 0530;  -- 	LOAD    Zero
+           0A7 : 4C83;  -- 	OUT     LVELCMD     ; stop
+           0A8 : 4C8B;  -- 	OUT     RVELCMD
+           0A9 : 4400;  -- 	RETURN
+           0AA : 4CC3;  -- 	OUT     RESETODO    ; reset odometry in case wheels moved after programming
+           0AB : 053E;  -- 	LOAD    RFast       ; Very slow forward movement
+           0AC : 4C83;  -- 	OUT     LVELCMD     ; commmand motors
+           0AD : 4C8B;  -- 	OUT     RVELCMD
+           0AE : 4888;  -- 	IN      RPOS        ; get current X position
+           0AF : 0D63;  -- 	ADD     TwoFeetPos     ; check the distance
+           0B0 : 4C06;  -- 	OUT 	LCD
+           0B1 : 1CAB;  -- 	JPOS    Go2ftBackPos   ; not there yet; keep checking
+           0B2 : 0530;  -- 	LOAD    Zero
+           0B3 : 4C83;  -- 	OUT     LVELCMD     ; stop
+           0B4 : 4C8B;  -- 	OUT     RVELCMD
+           0B5 : 4400;  -- 	RETURN
+           0B6 : 4CC3;  -- 	OUT     RESETODO    ; reset odometry in case wheels moved after programming
+           0B7 : 053D;  -- 	LOAD    FFast       ; Very slow forward movement
+           0B8 : 4C83;  -- 	OUT     LVELCMD     ; commmand motors
+           0B9 : 4C8B;  -- 	OUT     RVELCMD
+           0BA : 4882;  -- 	IN      LVEL        ; read left velocity
+           0BB : 092F;  -- 	STORE   Temp        ; save it
+           0BC : 488A;  -- 	IN      RVEL        ; read right velocity
+           0BD : 0D2F;  -- 	ADD     Temp        ; add to left velocity
+           0BE : 3011;  -- 	SHIFT   -1          ; divide by 2 (average)
+           0BF : 4C04;  -- 	OUT     SSEG1       ; display it
+           0C0 : 48C0;  -- 	IN      XPOS        ; get current X position
+           0C1 : 1162;  -- 	SUB     TwoFeet     ; check the distance
+           0C2 : 18B7;  -- 	JNEG    Go2ft       ; not there yet; keep checking
+           0C3 : 0530;  -- 	LOAD    Zero
+           0C4 : 4C83;  -- 	OUT     LVELCMD     ; stop
+           0C5 : 4C8B;  -- 	OUT     RVELCMD
+           0C6 : 4400;  -- 	RETURN
+           0C7 : 4CC3;  -- 	OUT     RESETODO    ; reset odometry in case wheels moved after programming
+           0C8 : 4C02;  -- 	OUT 	TIMER
+           0C9 : 054A;  -- 	LOAD 	Rforward
+           0CA : 4C8B;  -- 	OUT		RVELCMD
+           0CB : 054B;  -- 	LOAD	Lforward
+           0CC : 4C83;  -- 	OUT		LVELCMD
+           0CD : 4802;  -- 	IN 		TIMER
+           0CE : 1CD4;  -- 	JPOS	BalanceSpeedForward
+           0CF : 48C0;  -- 	IN      XPOS        ; get current X position
+           0D0 : 1162;  -- 	SUB     TwoFeet     ; check the distance
+           0D1 : 18C9;  -- 	JNEG    ForwardTwoFeetBalanced       ; not there yet; keep checking	
+           0D2 : 14C9;  -- 	JUMP	ForwardTwoFeetBalanced
+           0D3 : 14E7;  -- 	JUMP	EndForwardMovement
+           0D4 : 4882;  -- 	IN		LVEL
+           0D5 : 094E;  -- 	STORE	LCurrSpeed
+           0D6 : 488A;  -- 	IN		RVEL
+           0D7 : 094F;  -- 	STORE	RCurrSpeed
+           0D8 : 494E;  -- 	IN 		LCurrSpeed
+           0D9 : 114F;  -- 	SUB		RCurrSpeed
+           0DA : 4C06;  -- 	OUT 	LCD
+           0DB : 3414;  -- 	ADDI	20
+           0DC : 18DF;  -- 	JNEG	RtooFast
+           0DD : 37EC;  -- 	ADDI	-20
+           0DE : 1CE3;  -- 	JPOS	LtooFast
+           0DF : 054A;  -- 	LOAD	Rforward
+           0E0 : 37FF;  -- 	ADDI	-1
+           0E1 : 094A;  -- 	STORE	Rforward
+           0E2 : 14CF;  -- 	JUMP	EndForwardBalancing
+           0E3 : 054B;  -- 	LOAD	Lforward
+           0E4 : 37FF;  -- 	ADDI	-1
+           0E5 : 094B;  -- 	STORE	Lforward
+           0E6 : 14CF;  -- 	JUMP	EndForwardBalancing
+           0E7 : 0530;  -- 	LOAD    Zero
+           0E8 : 4C83;  -- 	OUT     LVELCMD     ; stop
+           0E9 : 4C8B;  -- 	OUT     RVELCMD
+           0EA : 4400;  -- 	RETURN
+           0EB : 4CC3;  -- 	OUT	RESETODO
+           0EC : 4CC3;  -- 	OUT     RESETODO    ; reset odometry in case wheels moved after programming
+           0ED : 053E;  -- 	LOAD    RFast       ; Very slow forward movement
+           0EE : 4C83;  -- 	OUT     LVELCMD     ; commmand motors
+           0EF : 4C8B;  -- 	OUT     RVELCMD
+           0F0 : 4882;  -- 	IN      LVEL        ; read left velocity
+           0F1 : 092F;  -- 	STORE   Temp        ; save it
+           0F2 : 488A;  -- 	IN      RVEL        ; read right velocity
+           0F3 : 0D2F;  -- 	ADD     Temp        ; add to left velocity
+           0F4 : 3011;  -- 	SHIFT   -1          ; divide by 2 (average)
+           0F5 : 4C04;  -- 	OUT     SSEG1       ; display it
+           0F6 : 48C0;  -- 	IN      XPOS        ; get current X position
+           0F7 : 0D62;  -- 	ADD     TwoFeet     ; check the distance
+           0F8 : 1CED;  -- 	JPOS    Go2ftBack   ; not there yet; keep checking
+           0F9 : 0530;  -- 	LOAD    Zero
+           0FA : 4C83;  -- 	OUT     LVELCMD     ; stop
+           0FB : 4C8B;  -- 	OUT     RVELCMD
+           0FC : 4400;  -- 	RETURN
+           0FD : 4C02;  -- 	OUT     TIMER
+           0FE : 4802;  -- 	IN      TIMER
+           0FF : 37FD;  -- 	ADDI    -3
+           100 : 1903;  -- 	JNEG    Wloop
+           101 : 4400;  -- 	RETURN
+           102 : 4C02;  -- 	OUT     TIMER
+           103 : 4802;  -- 	IN      TIMER
+           104 : 4C01;  -- 	OUT     LEDS
+           105 : 37F6;  -- 	ADDI    -10
+           106 : 1903;  -- 	JNEG    Wloop
+           107 : 4400;  -- 	RETURN
+           108 : 4126;  -- 	CALL    GetBattLvl 
+           109 : 1166;  -- 	SUB     MinBatt
+           10A : 190D;  -- 	JNEG    DeadBatt
+           10B : 0D66;  -- 	ADD     MinBatt     ; get original value back
+           10C : 4400;  -- 	RETURN
+           10D : 0534;  -- 	LOAD    Four
+           10E : 4C0A;  -- 	OUT     BEEP        ; start beep sound
+           10F : 4126;  -- 	CALL    GetBattLvl  ; get the battery level
+           110 : 4C04;  -- 	OUT     SSEG1       ; display it everywhere
+           111 : 4C05;  -- 	OUT     SSEG2
+           112 : 4C06;  -- 	OUT     LCD
+           113 : 0530;  -- 	LOAD    Zero
+           114 : 37FF;  -- 	ADDI    -1          ; 0xFFFF
+           115 : 4C01;  -- 	OUT     LEDS        ; all LEDs on
+           116 : 4C07;  -- 	OUT     GLEDS
+           117 : 4102;  -- 	CALL    Wait1       ; 1 second
+           118 : 0530;  -- 	Load    Zero
+           119 : 4C0A;  -- 	OUT     BEEP        ; stop beeping
+           11A : 0530;  -- 	LOAD    Zero
+           11B : 4C01;  -- 	OUT     LEDS        ; LEDs off
+           11C : 4C07;  -- 	OUT     GLEDS
+           11D : 4102;  -- 	CALL    Wait1       ; 1 second
+           11E : 150D;  -- 	JUMP    DeadBatt    ; repeat forever
+           11F : 0567;  -- 	LOAD    I2CWCmd     ; 0x1190 (write 1B, read 1B, addr 0x90)
+           120 : 4C90;  -- 	OUT     I2C_CMD     ; to I2C_CMD register
+           121 : 0530;  -- 	LOAD    Zero        ; 0x0000 (A/D port 0, no increment)
+           122 : 4C91;  -- 	OUT     I2C_DATA    ; to I2C_DATA register
+           123 : 4C92;  -- 	OUT     I2C_RDY     ; start the communication
+           124 : 412C;  -- 	CALL    BlockI2C    ; wait for it to finish
+           125 : 4400;  -- 	RETURN
+           126 : 0568;  -- 	LOAD    I2CRCmd     ; 0x0190 (write 0B, read 1B, addr 0x90)
+           127 : 4C90;  -- 	OUT     I2C_CMD     ; to I2C_CMD
+           128 : 4C92;  -- 	OUT     I2C_RDY     ; start the communication
+           129 : 412C;  -- 	CALL    BlockI2C    ; wait for it to finish
+           12A : 4891;  -- 	IN      I2C_DATA    ; get the returned data
+           12B : 4400;  -- 	RETURN
+           12C : 4892;  -- 	IN      I2C_RDY;   ; Read busy signal
+           12D : 1D2C;  -- 	JPOS    BlockI2C    ; If not 0, try again
+           12E : 4400;  -- 	RETURN              ; Else return
+           12F : 0000;  -- Temp:     DW 0 ; "Temp" is not a great name, but can be helpful
+           130 : 0000;  -- Zero:     DW 0
+           131 : 0001;  -- One:      DW 1
+           132 : 0002;  -- Two:      DW 2
+           133 : 0003;  -- Three:    DW 3
+           134 : 0004;  -- Four:     DW 4
+           135 : 0005;  -- Five:     DW 5
+           136 : 0006;  -- Six:      DW 6
+           137 : 0007;  -- Seven:    DW 7
+           138 : 0008;  -- Eight:    DW 8
+           139 : 0009;  -- Nine:     DW 9
+           13A : 000A;  -- Ten:      DW 10
+           13B : 0064;  -- FSlow:    DW 100       ; 100 is about the lowest value that will move at all
+           13C : FF9C;  -- RSlow:    DW -100
+           13D : 01F4;  -- FFast:    DW 500       ; 500 is a fair clip (511 is max)
+           13E : FE0C;  -- RFast:    DW -500
+           13F : FDF2;  -- CW90:	  DW -526
+           140 : FEA2;  -- CCW180:	  DW -350
+           141 : FF3D;  -- CCW90:	  DW -195
+           142 : 0064;  -- TurnTolerance: DW 100
+           143 : 0000;  -- Xdiff:	  DW 0
+           144 : 0000;  -- Ydiff:	  DW 0
+           145 : 0001;  -- xCurr:		DW 1
+           146 : 0001;  -- yCurr:		DW 1
+           147 : 0000;  -- THET:		DW 0
+           148 : 0000;  -- LPOSEXIT:	DW 0
+           149 : 0000;  -- RPOSEXIT:	DW 0
+           14A : 0000;  -- Rforward:	DW 0
+           14B : 0000;  -- LForward:	DW 0
+           14C : 0000;  -- Rreverse:	DW 0
+           14D : 0000;  -- Lreverse:	DW 0
+           14E : 0000;  -- LCurrSpeed:	DW 0
+           14F : 0000;  -- RCurrSpeed:	DW 0
+           150 : 0002;  -- PickX:	DW	2
+           151 : 0004;  -- PickY:	DW  4
+           152 : 0004;  -- DropX:	DW	4
+           153 : 0001;  -- DropY:	DW	1
+           154 : 0000;  -- XTarget:	DW 0
+           155 : 0000;  -- YTarget:	DW 0
+           156 : 0001;  -- Mask0:    DW &B00000001
+           157 : 0002;  -- Mask1:    DW &B00000010
+           158 : 0004;  -- Mask2:    DW &B00000100
+           159 : 0008;  -- Mask3:    DW &B00001000
+           15A : 0010;  -- Mask4:    DW &B00010000
+           15B : 0020;  -- Mask5:    DW &B00100000
+           15C : 0040;  -- Mask6:    DW &B01000000
+           15D : 0080;  -- Mask7:    DW &B10000000
+           15E : 0014;  -- StartMask: DW &B10100
+           15F : 00FF;  -- AllSonar: DW &B11111111
+           160 : 01DC;  -- OneMeter: DW 476        ; one meter in 2.1mm units
+           161 : 00EE;  -- HalfMeter: DW 238       ; half meter in 2.1mm units
+           162 : 0122;  -- TwoFeet:  DW 290        ; ~2ft in 2.1mm units
+           163 : 0212;  -- TwoFeetPos:	DW 530
+           164 : 0424;  -- FourFeetPos: DW 1060
+           165 : 0636;  -- SixFeetPos:	DW	1590
+           166 : 006E;  -- MinBatt:  DW 110        ; 11V - minimum safe battery voltage
+           167 : 1190;  -- I2CWCmd:  DW &H1190     ; write one byte, read one byte, addr 0x90
+           168 : 0190;  -- I2CRCmd:  DW &H0190     ; write nothing, read one byte, addr 0x90
+  END;

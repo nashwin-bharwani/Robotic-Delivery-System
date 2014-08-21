@@ -1,0 +1,40 @@
+
+ADDI    10
+TOL 	5
+OUT 	TIMER
+LOAD Zero
+ADDI 1
+OUT LEDS
+
+READTIME:	IN TIMER
+			ADDI -20
+			JNEG READTIME
+			JUMP CheckCommands
+			
+CheckCommands:			
+JBET	Passed
+JUMP	Fail
+
+Passed:
+	LOAD Zero
+	ADDI 2
+	OUT LEDS
+	JUMP READTIME
+	
+Fail:
+	LOAD Zero
+	OUT LEDS
+	
+
+Zero: DW 0
+A: DW 0
+B: DW 0
+C: DW 0
+
+
+SWITCHES: 	EQU	&H00
+LEDS:		EQU	&H01
+TIMER:		EQU	&H02
+SEVENSEG:	EQU &H04
+
+INDATA:		DW  &H05
